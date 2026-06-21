@@ -1,0 +1,158 @@
+# Paper-to-Deck — Codex Plugin
+
+**Academic Paper → Polished Presentation Deck**
+
+A ChatGPT / OpenAI Codex plugin that converts any academic paper (PDF) into an audience-tuned slide deck with speaker notes, using a three-stage pipeline with human-in-the-loop approval gates. Ported from Dr. Xiaoguang Ma's n8n paper-to-presentation v2.4.1 workflow (192 nodes).
+
+> **Claude Code version**: see [github.com/maxuwp/p2d](https://github.com/maxuwp/p2d)  
+> **POSED (lecture authoring, Codex)**: see [github.com/maxuwp/posed-codex](https://github.com/maxuwp/posed-codex)
+
+---
+
+## The Three-Stage Pipeline
+
+```
+Stage 1: Content Creation
+  Ingest paper → Extract MCS + PSE (anti-divergence anchor)
+  Build outline (PSE-anchored, two-agent review ≥85/100)
+  Draft slides + notes (PSE self-trace, word-count check)
+                        ↓ HITL Gate 1
+
+Stage 2: Humanization
+  Remove 32 AI-tell patterns
+  Apply presenter voice from your style profile
+  Score /50 — threshold 40 to pass
+                        ↓ HITL Gate 2
+
+Stage 3: Visual Enhancement
+  3-template preview (choose your visual style)
+  Generate self-contained deck.html (1920×1080)
+                        ↓ HITL Gate 3
+```
+
+**No image generation.** Visual enhancement = template selection + layout + design tokens. Visual hints become placeholder figure elements you can fill offline.
+
+---
+
+## Anti-Divergence: Why It Matters
+
+The most common failure in AI-generated presentations is drift — the AI latches onto an interesting sub-detail and forgets the paper's main contribution. In our ASEE 2026 demo, v00 covered only Phases 1–2 of a 4-phase protocol.
+
+**Fix:** At ingest, the skill extracts:
+- **MCS** (Main Contribution Statement, 1–2 sentences) — what ONE thing does this paper contribute?
+- **PSE** (Primary Structural Elements) — the paper's top-level phases/sections/findings
+
+These are confirmed with you and locked into `manifest.canonical_facts`. Every downstream stage self-checks PSE coverage before opening its gate.
+
+---
+
+## Install
+
+**Step 1** — Add the marketplace:
+
+```bash
+codex plugin marketplace add maxuwp/p2d-codex
+```
+
+**Step 2** — Install from the app:
+
+```
+/plugins → search "paper-to-deck" → Install
+```
+
+Or for local development:
+
+```bash
+codex --plugin-dir ./p2d-codex-plugin
+```
+
+---
+
+## Quickstart
+
+```
+@paper-to-deck
+```
+
+The skill will ask for: paper PDF path, audience mode, and duration. Everything else runs with your approval at each gate.
+
+**Audience modes:**
+- `conference-talk` — strict time budget, one main message
+- `grad-seminar` — methods-heavy, technical depth
+- `undergrad-intro` — motivation-first, plain language
+- `research-group-share` — informal, discussion-oriented
+- `self-study` — complete notes, no live audience
+
+---
+
+## Skill Reference
+
+Invoke skills with `@<skill-name>` or describe the task naturally.
+
+| Skill | Invoke | What it does |
+|---|---|---|
+| **Orchestrator** | `@paper-to-deck` | Entry point — runs all three stages with HITL gates |
+| Ingest | `@p2d-ingest` | Extract text + two-pass analysis + MCS/PSE extraction + quality check |
+| Verify | `@p2d-verify` | Fact-check the AI's paper analysis against the original PDF |
+| Persona | `@p2d-persona` | Build your Presentation Style Profile (delivery voice, rhythm, audience moves) |
+| Outline | `@p2d-outline` | PSE-anchored outline — two-agent review cycle, threshold 85/100 |
+| Draft slides | `@p2d-draft-slides` | Slide markdown with PSE trace comments and faithfulness check |
+| Draft notes | `@p2d-draft-notes` | Speaker script with word-count self-check and PSE bridges |
+| Editor review | `@p2d-editor-review` | AI quality pre-screen (100-point rubric, faithfulness-weighted) |
+| **Humanizer** | `@p2d-humanizer` | Stage 2 — 32-pattern AI-tell removal + presenter voice personalization |
+| Style | `@p2d-style` | Visual style tokens |
+| **Compile** | `@p2d-compile` | Stage 3 — 3-template preview gate + full HTML deck |
+| **Final review** | `@p2d-final-review` | Cross-artifact consistency audit (facts, citations, PSE coverage, MCS echo) |
+| **Reflect** | `@p2d-reflect` | Stage 6 — update Presentation Style Profile, log pipeline improvements |
+
+Skills in **bold** are new in v1.1/v1.2.
+
+---
+
+## What Humanization Does
+
+The `p2d-humanizer` applies the full 32-pattern AI-tell taxonomy, adapted for academic presentations:
+
+- Significance inflation, vague attribution, copula avoidance, AI-vocabulary clusters
+- Signposting and meta-commentary
+- Presentation-specific: removes generic note openers, flattens bullet grammar, tightens section bridges
+- **Zero em-dashes** hard rule
+
+Then personalizes for the presenter's voice from `presentation_style.md`.
+
+---
+
+## Template Preview
+
+Before generating the full deck, `p2d-compile` shows you **3 live HTML cover slides** (with your real paper title and tagline). Pick A, B, or C. The full deck only generates after you choose.
+
+---
+
+## Requirements
+
+- OpenAI Codex CLI (latest)
+- Python 3.9+ (for word-count self-checks)
+- `frontend-slides-main/` at `~/Documents/claudecode/frontend-slides-main/` (for HTML deck generation)
+
+---
+
+## Versioning
+
+Uses `p2d_skill.X.Y` versioning (see [CHANGELOG.md](CHANGELOG.md)):
+- **Y** increments after each reflection session with universal improvements
+- **X** increments on major structural changes
+
+Current version: **p2d_skill.1.3**
+
+---
+
+## Designed at
+
+ECE Department, University of Wisconsin–Platteville  
+Dr. Xiaoguang Ma · ASEE 2026 case study
+
+---
+
+## License
+
+MIT
