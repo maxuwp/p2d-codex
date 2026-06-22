@@ -27,6 +27,7 @@ Stage 2: Humanization
 Stage 3: Visual Enhancement
   3-template preview (choose your visual style)
   Generate self-contained deck.html (1920×1080)
+  Phase 4 Visual QA Review → visual_review.json
                         ↓ HITL Gate 3
 ```
 
